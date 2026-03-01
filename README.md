@@ -44,7 +44,7 @@ If using Ubuntu, you will likely see an error about `e2fsck` being out of date a
 
 PiShrink will shrink the last partition of your image. If that partition is not ext2, ext3, or ext4 it will not be able to shrink your image.
 If the last partition is not the root filesystem partition, auto resizing will not run on boot.
-For newer Raspberry Pi OS images, PiShrink will prefer the modern first-boot auto-resize mechanism by adding `init=/usr/lib/raspi-config/init_resize.sh` to boot `cmdline.txt`. If that is not available, it falls back to the legacy `/etc/rc.local` method.
+For newer Raspberry Pi OS images, PiShrink will prefer the modern first-boot auto-resize mechanism by adding `init=/usr/lib/raspi-config/init_resize.sh` to boot `cmdline.txt`. If that is not available and `/etc/rc.local` exists, it falls back to the legacy method.
 If you want to use auto resizing on a distro using Systemd, you should ensure you [Enabled /etc/rc.local Compatibility](https://www.linuxbabe.com/linux-server/how-to-enable-etcrc-local-with-systemd).
 
 ## Installation ##

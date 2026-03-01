@@ -88,10 +88,6 @@ function set_autoexpand() {
         return
     fi
 
-    if [[ ! -f "$mountdir/etc/rc.local" ]]; then
-        info "An existing /etc/rc.local was not found, autoexpand may fail..."
-    fi
-
     # Prefer init_resize.sh via cmdline.txt on newer Raspberry Pi OS
     if [[ -n "$parted_output" ]]; then
       local boot_part boot_partnum boot_partstart boot_partsize
@@ -121,6 +117,12 @@ function set_autoexpand() {
         fi
         losetup -d "$boot_loopback" 2>/dev/null || true
       fi
+    fi
+
+    if [[ ! -f "$mountdir/etc/rc.local" ]]; then
+        info "An existing /etc/rc.local was not found; skipping legacy autoexpand"
+        umount "$mountdir"
+        return
     fi
 
     if ! grep -q "## PiShrink https://github.com/Drewsif/PiShrink ##" "$mountdir/etc/rc.local"; then
