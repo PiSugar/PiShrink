@@ -92,6 +92,37 @@ function set_autoexpand() {
         info "An existing /etc/rc.local was not found, autoexpand may fail..."
     fi
 
+    # Prefer init_resize.sh via cmdline.txt on newer Raspberry Pi OS
+    if [[ -n "$parted_output" ]]; then
+      local boot_part boot_partnum boot_partstart boot_partsize
+      local boot_loopback boot_mountdir cmdline_path
+
+      boot_part=$(echo "$parted_output" | tail -n +3 | head -n 1)
+      boot_partnum=$(echo "$boot_part" | cut -d ':' -f 1)
+      boot_partstart=$(echo "$boot_part" | cut -d ':' -f 2 | tr -d 'B')
+      boot_partsize=$(echo "$boot_part" | cut -d ':' -f 4 | tr -d 'B')
+
+      if [[ -n "$boot_partnum" && -n "$boot_partstart" && -n "$boot_partsize" ]]; then
+        boot_loopback=$(losetup -f --show -o "$boot_partstart" --sizelimit "$boot_partsize" "$img")
+        boot_mountdir=$(mktemp -d)
+        if mount "$boot_loopback" "$boot_mountdir" -o rw; then
+          cmdline_path="$boot_mountdir/cmdline.txt"
+          if [[ -f "$cmdline_path" && -x "$mountdir/usr/lib/raspi-config/init_resize.sh" ]]; then
+            if ! grep -q "init=/usr/lib/raspi-config/init_resize.sh" "$cmdline_path"; then
+              sed -i "s|$| init=/usr/lib/raspi-config/init_resize.sh|" "$cmdline_path"
+            fi
+            info "Enabled auto-expand via init_resize.sh"
+            umount "$boot_mountdir"
+            losetup -d "$boot_loopback"
+            umount "$mountdir"
+            return
+          fi
+          umount "$boot_mountdir"
+        fi
+        losetup -d "$boot_loopback" 2>/dev/null || true
+      fi
+    fi
+
     if ! grep -q "## PiShrink https://github.com/Drewsif/PiShrink ##" "$mountdir/etc/rc.local"; then
       echo "Creating new /etc/rc.local"
     if [ -f "$mountdir/etc/rc.local" ]; then
